@@ -1,0 +1,125 @@
+# ============================================================================
+# CATALOG SPEC — single source of truth for product data
+# ============================================================================
+#
+# This file is the canonical definition of every product on the site.
+# It replaces ad-hoc JS objects (`pookalitaProducts.js`, etc).
+# Build scripts should READ this YAML and EMIT framework-specific code.
+#
+# Validation:
+#   node scripts/validate-catalog.mjs templates/catalog-spec/catalog-spec.yaml
+#
+# Hard rules (enforced by validator):
+#   1. Every product MUST have a unique `id`.
+#   2. Every product MUST have a unique `slug`.
+#   3. Every product image MUST exist on disk at the path it references.
+#   4. The pair (name, image) MUST be unique across the whole catalog —
+#      this is what catches the "Pearl Heart Necklace duplicated" bug.
+#   5. Variant names containing `&` or `/` (e.g. "Pink & Green", "Black/Silver")
+#      MUST set `color` to a CSS gradient, not a solid hex — otherwise the
+#      swatch lies about what's in the photo.
+#   6. Every variant `image` MUST exist on disk.
+#   7. Members of a `group` MUST share the same `category` — no mixing
+#      brooches and necklaces in the same group.
+#   8. Required fields below must be present and non-empty.
+#
+# See `IMAGE-NAMING.md` for image path rules.
+# ============================================================================
+
+meta:
+  client: "ExampleClient"
+  site: "https://example.com"
+  last_updated: "2026-05-07"
+  currency: "USD"
+
+# ---------------------------------------------------------------------------
+# Categories — flat list. A product belongs to exactly one category.
+# ---------------------------------------------------------------------------
+categories:
+  - id: brooch
+    label: "Brooches"
+    nav_order: 1
+  - id: necklace
+    label: "Necklaces"
+    nav_order: 2
+  - id: hat
+    label: "Hats"
+    nav_order: 3
+
+# ---------------------------------------------------------------------------
+# Products
+# ---------------------------------------------------------------------------
+# Required fields:  id, slug, name, category, price, image, description
+# Optional fields:  variants, group, tags, sku, stock, dimensions, materials
+# ---------------------------------------------------------------------------
+products:
+
+  - id: b1
+    slug: ornate-jacket-brooch
+    name: "Ornate Jacket Brooch"
+    category: brooch
+    price: 24.99
+    image: /images/products/ornate-jacket-brooch.jpg     # default = first variant
+    description: >
+      Hand-finished jacket brooch with crystal accents. Available in four colors.
+    group: jacket-brooches
+    variants:
+      - name: "Blue"
+        color: "#1E40AF"
+        image: /images/products/ornate-jacket-brooch-blue.jpg
+      - name: "Cream"
+        color: "#F5E6C8"
+        image: /images/products/ornate-jacket-brooch-cream.jpg
+      - name: "Black"
+        color: "#0A0A0A"
+        image: /images/products/ornate-jacket-brooch-black.jpg
+      - name: "Red"
+        color: "#B91C1C"
+        image: /images/products/ornate-jacket-brooch-red.jpg
+    tags: [statement, formal, gift]
+
+  - id: b5
+    slug: jeweled-leopard-face-brooch
+    name: "Jeweled Leopard Face Brooch"
+    category: brooch
+    price: 22.50
+    image: /images/products/jeweled-leopard-face-brooch.jpg
+    description: >
+      Detailed leopard face brooch with gem accents. Three colorways.
+    group: leopard-brooches
+    variants:
+      - name: "Black"
+        color: "#0A0A0A"
+        image: /images/products/jeweled-leopard-face-brooch-black.jpg
+      - name: "Silver"
+        color: "#C0C0C0"
+        image: /images/products/jeweled-leopard-face-brooch-silver.jpg
+      - name: "Black & Silver"
+        # multi-color: MUST be a gradient, not a solid hex
+        color: "linear-gradient(135deg, #0A0A0A 0%, #0A0A0A 50%, #C0C0C0 50%, #C0C0C0 100%)"
+        image: /images/products/jeweled-leopard-face-brooch-black-silver.jpg
+
+  - id: n3
+    slug: pearl-heart-necklace
+    name: "Pearl Heart Necklace"
+    category: necklace
+    price: 32.00
+    image: /images/products/pearl-heart-necklace.jpg
+    description: >
+      Freshwater-pearl heart pendant on a delicate chain.
+    # NOTE: this product was duplicated as n6 in the previous codebase —
+    # validator now refuses to let that happen because (name, image) must be unique.
+
+# ---------------------------------------------------------------------------
+# Groups — collections of related products that share a story / display block.
+# Members of a group MUST share the same category.
+# ---------------------------------------------------------------------------
+groups:
+  - id: jacket-brooches
+    label: "Jacket Brooches"
+    is_set: true
+    members: [b1]                  # b1 carries all jacket-brooch variants
+  - id: leopard-brooches
+    label: "Leopard Brooches"
+    is_set: true
+    members: [b5]

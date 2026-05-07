@@ -1,0 +1,52 @@
+name: validate-catalog
+
+# ----------------------------------------------------------------------------
+# Drop-in CI workflow.
+# Copy this file into a CLIENT repo at `.github/workflows/validate-catalog.yml`
+# along with `scripts/validate-catalog.mjs` and a `templates/catalog-spec/`
+# directory containing the client's `catalog-spec.yaml`.
+# ----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "templates/catalog-spec/**"
+      - "scripts/validate-catalog.mjs"
+      - "public/images/products/**"
+      - ".github/workflows/validate-catalog.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run catalog validator
+        run: |
+          node scripts/validate-catalog.mjs \
+            templates/catalog-spec/catalog-spec.yaml \
+            --images public
+
+      - name: Warn on oversized images
+        run: |
+          set -e
+          echo "Scanning public/images/products for files > 500KB..."
+          shopt -s nullglob
+          big=0
+          for f in public/images/products/*; do
+            sz=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+            if [ "$sz" -gt 512000 ]; then
+              echo "::warning file=$f::Image is $((sz/1024))KB (>500KB) — please compress"
+              big=$((big+1))
+            fi
+          done
+          echo "Oversized images: $big"
