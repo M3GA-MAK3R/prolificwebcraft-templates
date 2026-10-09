@@ -64,12 +64,10 @@ catalog data are exported from Saltcorn into the client repo on demand.
    node scripts/validate-catalog.mjs templates/catalog-spec/catalog-spec.yaml --images public
    ```
 
-   *(The Twenty exporter at [`scripts/twenty-export.mjs`](scripts/twenty-export.mjs)
-   is retained for existing Twenty accounts — see Legacy below.)*
-
-4. In CI, the checked-in fixture at `tests/fixtures/expected-catalog.yaml` is the
-   source of truth. Any exporter must produce a byte-for-byte match when run in
-   dry-run mode against the same input.
+4. In CI, the [`validate-catalog.yml`](.github/workflows/validate-catalog.yml)
+   workflow runs the validator directly against the checked-in
+   `templates/catalog-spec/catalog-spec.yaml` on every push and catalog PR —
+   a bad catalog can't merge.
 
 **Export rules** (enforced by the validator):
 
@@ -78,14 +76,6 @@ catalog data are exported from Saltcorn into the client repo on demand.
 - `tags` and `members` remain single-line flow lists.
 - Strings are always quoted in the emitted YAML, even when YAML would allow an unquoted scalar (stable, diff-friendly output).
 - Output always ends with exactly one trailing newline.
-
-### Legacy / alternate CRM: Twenty
-
-`scripts/twenty-export.mjs` and the `dry-run-twenty-export` CI job are retained
-for accounts still on Twenty CRM. **No new accounts are provisioned against
-Twenty** — all new engagements source from Saltcorn. The Saltcorn REST path
-above (`/api/<table>/` with `Authorization: Bearer <token>`) is preferred over
-psql when an API token is available.
 
 ## Why each piece exists (lessons from xpress-yourself-boutique)
 
